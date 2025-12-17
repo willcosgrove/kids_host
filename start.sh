@@ -12,20 +12,15 @@ if [ -n "$CAROLINE_PASSWORD" ]; then
     echo "Set password for caroline"
 fi
 
-# Ensure chroot directory structure exists and has correct permissions
-# Chroot requires: root owns the chroot dir, user owns subdirs inside
+# Ensure user directories exist with correct permissions
 for user in graham caroline; do
-    mkdir -p /sites/$user/public_html
-    # Chroot directory must be owned by root (required for chroot)
-    chown root:root /sites/$user
+    mkdir -p /sites/$user
+    chown $user:kids /sites/$user
     chmod 755 /sites/$user
-    # User owns their public_html directory where they upload files
-    chown $user:kids /sites/$user/public_html
-    chmod 755 /sites/$user/public_html
     # Create a starter index.html if none exists
-    if [ ! -f /sites/$user/public_html/index.html ]; then
-        echo "<html><body><h1>Welcome to $user's website!</h1></body></html>" > /sites/$user/public_html/index.html
-        chown $user:kids /sites/$user/public_html/index.html
+    if [ ! -f /sites/$user/index.html ]; then
+        echo "<html><body><h1>Welcome to $user's website!</h1></body></html>" > /sites/$user/index.html
+        chown $user:kids /sites/$user/index.html
     fi
 done
 

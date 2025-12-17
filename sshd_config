@@ -24,11 +24,10 @@ AllowTcpForwarding no
 AllowAgentForwarding no
 PermitTunnel no
 
-# SFTP-only for kids group with chroot
+# SFTP-only for kids group (no chroot, simpler folder structure)
 Subsystem sftp internal-sftp
 
 Match Group kids
-    ChrootDirectory /sites/%u
-    ForceCommand internal-sftp
+    ForceCommand internal-sftp -d /sites/%u
     AllowTcpForwarding no
     X11Forwarding no
