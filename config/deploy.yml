@@ -28,7 +28,7 @@ servers:
         - 2222:2222
 
 volumes:
-  - /var/www/kids-sites:/sites
+  - /Users/will/kids-sites:/sites
 
 env:
   secret:
