@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Stop existing kids-hosting containers before deploy to avoid port 2222 conflict
+# This causes brief SFTP downtime during deploys but prevents failures
+
+ssh will@mini.local "docker ps -q --filter name=kids-hosting-web | xargs -r docker stop" 2>/dev/null || true
