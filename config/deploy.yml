@@ -1,0 +1,28 @@
+service: kids-hosting
+image: kids-hosting
+
+# Build directly on the Mac mini (no external registry needed)
+builder:
+  remote: macmini.local
+
+proxy:
+  ssl: false
+  hosts:
+    - graham.cosgrove.kids
+    - caroline.cosgrove.kids
+
+servers:
+  web:
+    hosts:
+      - macmini.local
+    options:
+      publish:
+        - 2222:2222
+
+volumes:
+  - /var/www/kids-sites:/sites
+
+env:
+  secret:
+    - GRAHAM_PASSWORD
+    - CAROLINE_PASSWORD

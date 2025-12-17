@@ -1,0 +1,34 @@
+# Minimal sshd config for SFTP-only access with chroot
+
+Port 2222
+Protocol 2
+
+# Host keys
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication
+PermitRootLogin no
+PasswordAuthentication yes
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+
+# Disable non-SFTP features
+X11Forwarding no
+AllowTcpForwarding no
+AllowAgentForwarding no
+PermitTunnel no
+
+# SFTP-only for kids group with chroot
+Subsystem sftp internal-sftp
+
+Match Group kids
+    ChrootDirectory /sites/%u
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
+    X11Forwarding no
