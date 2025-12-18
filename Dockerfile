@@ -15,7 +15,7 @@ COPY Gemfile ./
 RUN bundle install
 
 # Copy application code
-COPY config.ru server.rb ./
+COPY config.ru server.rb helpers.rb ./
 
 # Copy SSH config and startup script
 COPY sshd_config /etc/ssh/sshd_config

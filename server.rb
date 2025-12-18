@@ -1,6 +1,6 @@
 require "roda"
 require "erb"
-require "tilt"
+require_relative "helpers"
 
 class KidsHosting < Roda
   # Configuration from environment variables
@@ -119,10 +119,12 @@ class KidsHosting < Roda
   def render_erb(path, user)
     response["Content-Type"] = "text/html; charset=utf-8"
 
-    # Create a binding with helper methods
+    # Evaluate ERB in context's instance so `def` works naturally
     context = ErbContext.new(user)
-    template = Tilt::ERBTemplate.new(path)
-    template.render(context)
+    template = File.read(path)
+    context.instance_eval do
+      ERB.new(template).result(binding)
+    end
   rescue StandardError => e
     response.status = 500
     "<h1>Error</h1><pre>#{ERB::Util.html_escape(e.message)}</pre>"
@@ -137,69 +139,11 @@ end
 
 # Helper context for ERB templates
 class ErbContext
+  include ErbHelpers
+
   attr_reader :user
 
   def initialize(user)
     @user = user
-  end
-
-  # Get current time
-  def now
-    Time.now
-  end
-
-  # Random number between min and max
-  def random(min = 1, max = 100)
-    rand(min..max)
-  end
-
-  # Pick a random item from an array
-  def pick(*items)
-    items.flatten.sample
-  end
-
-  # Repeat something n times
-  def repeat(n, &block)
-    n.times.map(&block).join
-  end
-
-  # Simple HTML escaping
-  def h(text)
-    ERB::Util.html_escape(text)
-  end
-
-  # Format a date nicely
-  def format_date(time = Time.now)
-    time.strftime("%B %d, %Y")
-  end
-
-  # Format time nicely
-  def format_time(time = Time.now)
-    time.strftime("%I:%M %p")
-  end
-
-  # Days until a date (for countdowns)
-  def days_until(month, day, year = nil)
-    year ||= Time.now.year
-    target = Time.new(year, month, day)
-    target = Time.new(year + 1, month, day) if target < Time.now
-    ((target - Time.now) / 86400).ceil
-  end
-
-  # Rainbow text - wraps each letter in a span with a color
-  def rainbow(text)
-    colors = %w[red orange yellow green blue indigo violet]
-    text.chars.map.with_index do |char, i|
-      if char == " "
-        " "
-      else
-        %(<span style="color: #{colors[i % colors.length]}">#{h(char)}</span>)
-      end
-    end.join
-  end
-
-  # Current year (for copyright)
-  def year
-    Time.now.year
   end
 end
