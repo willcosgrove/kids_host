@@ -1,26 +1,30 @@
-FROM alpine:3.19
+FROM ruby:4.0-rc-alpine
 
-# Install nginx + openssh
-RUN apk add --no-cache nginx openssh bash
-
-# Create nginx dirs
-RUN mkdir -p /run/nginx
+# Install openssh and bash (Ruby is already in the base image)
+RUN apk add --no-cache openssh bash build-base
 
 # Generate SSH host keys
 RUN ssh-keygen -A
 
 # Create kids group and users
 RUN addgroup kids && \
-    adduser -D -G kids graham && \
-    adduser -D -G kids caroline
+  adduser -D -G kids graham && \
+  adduser -D -G kids caroline
 
-# Copy configs
-COPY nginx.conf /etc/nginx/nginx.conf
+# Set up Ruby app
+WORKDIR /app
+COPY Gemfile ./
+RUN bundle install
+
+# Copy application code
+COPY config.ru server.rb ./
+
+# Copy SSH config and startup script
 COPY sshd_config /etc/ssh/sshd_config
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# HTTP for nginx, 2222 for SFTP
+# HTTP for Puma, 2222 for SFTP
 EXPOSE 80 2222
 
 CMD ["/start.sh"]
