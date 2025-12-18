@@ -1,1 +1,5 @@
+# Kamal secrets (passwords, tokens)
 .kamal/secrets
+
+# Personal deployment config (use deploy.example.yml as template)
+config/deploy.yml

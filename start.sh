@@ -1,25 +1,57 @@
 #!/bin/bash
 set -e
 
-# Set user passwords from environment variables
-if [ -n "$GRAHAM_PASSWORD" ]; then
-    echo "graham:$GRAHAM_PASSWORD" | chpasswd
-    echo "Set password for graham"
+# Validate required environment variables
+if [ -z "$KIDS" ]; then
+    echo "ERROR: KIDS environment variable is required (e.g., KIDS=alice,bob)"
+    exit 1
 fi
 
-if [ -n "$CAROLINE_PASSWORD" ]; then
-    echo "caroline:$CAROLINE_PASSWORD" | chpasswd
-    echo "Set password for caroline"
+if [ -z "$DOMAIN" ]; then
+    echo "ERROR: DOMAIN environment variable is required (e.g., DOMAIN=example.com)"
+    exit 1
 fi
 
-# Ensure user directories exist with correct permissions
-for user in graham caroline; do
-    mkdir -p /sites/$user
-    chown $user:kids /sites/$user
-    chmod 755 /sites/$user
+# Parse KIDS env var (comma-separated: "alice,bob")
+IFS=',' read -ra KIDS_ARRAY <<< "$KIDS"
+
+# Parse KIDS_PASSWORDS env var (format: "alice:pass1,bob:pass2")
+declare -A PASSWORDS
+if [ -n "$KIDS_PASSWORDS" ]; then
+    IFS=',' read -ra PASS_PAIRS <<< "$KIDS_PASSWORDS"
+    for pair in "${PASS_PAIRS[@]}"; do
+        IFS=':' read -r name pass <<< "$pair"
+        PASSWORDS[$name]="$pass"
+    done
+fi
+
+# Create each user and set up their environment
+for kid in "${KIDS_ARRAY[@]}"; do
+    # Trim whitespace
+    kid=$(echo "$kid" | xargs)
+
+    # Create user if doesn't exist
+    if ! id "$kid" &>/dev/null; then
+        adduser -D -G kids "$kid"
+        echo "Created user: $kid"
+    fi
+
+    # Set password if provided
+    if [ -n "${PASSWORDS[$kid]}" ]; then
+        echo "$kid:${PASSWORDS[$kid]}" | chpasswd
+        echo "Set password for $kid"
+    else
+        echo "WARNING: No password set for $kid (SFTP login will fail)"
+    fi
+
+    # Ensure user directory exists with correct permissions
+    mkdir -p /sites/$kid
+    chown $kid:kids /sites/$kid
+    chmod 755 /sites/$kid
+
     # Create a starter index.html.erb if no index exists
-    if [ ! -f /sites/$user/index.html ] && [ ! -f /sites/$user/index.html.erb ]; then
-        cat > /sites/$user/index.html.erb << 'HTMLEOF'
+    if [ ! -f /sites/$kid/index.html ] && [ ! -f /sites/$kid/index.html.erb ]; then
+        cat > /sites/$kid/index.html.erb << 'HTMLEOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -43,9 +75,13 @@ for user in graham caroline; do
 </body>
 </html>
 HTMLEOF
-        chown $user:kids /sites/$user/index.html.erb
+        chown $kid:kids /sites/$kid/index.html.erb
+        echo "Created starter page for $kid"
     fi
 done
+
+echo "Kids hosting ready for: ${KIDS_ARRAY[*]}"
+echo "Domain: $DOMAIN"
 
 # Start sshd
 /usr/sbin/sshd

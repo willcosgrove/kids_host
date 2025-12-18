@@ -3,10 +3,11 @@ require "erb"
 require "tilt"
 
 class KidsHosting < Roda
-  USERS = {
-    "graham.cosgrove.kids" => "graham",
-    "caroline.cosgrove.kids" => "caroline"
-  }.freeze
+  # Configuration from environment variables
+  DOMAIN = ENV.fetch("DOMAIN") { raise "DOMAIN environment variable is required" }
+  KIDS = ENV.fetch("KIDS") { raise "KIDS environment variable is required" }.split(",").map(&:strip)
+
+  raise "KIDS cannot be empty" if KIDS.empty?
 
   MIME_TYPES = {
     "html" => "text/html; charset=utf-8",
@@ -37,14 +38,15 @@ class KidsHosting < Roda
       "OK"
     end
 
-    # Determine user from hostname
+    # Determine user from hostname (wildcard subdomain matching)
+    # e.g., alice.example.com with DOMAIN=example.com -> user "alice"
     host = request.host.to_s.downcase.split(":").first  # Remove port if present
-    user = USERS[host]
+    user = host.sub(".#{DOMAIN}", "")
 
-    # If no matching user, return 404
-    unless user
+    # Verify this is a valid kid
+    unless KIDS.include?(user)
       response.status = 404
-      next "Not Found - Unknown host"
+      next "Not Found - Unknown user"
     end
 
     site_root = "/sites/#{user}"

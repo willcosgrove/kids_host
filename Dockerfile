@@ -6,10 +6,8 @@ RUN apk add --no-cache openssh bash build-base
 # Generate SSH host keys
 RUN ssh-keygen -A
 
-# Create kids group and users
-RUN addgroup kids && \
-  adduser -D -G kids graham && \
-  adduser -D -G kids caroline
+# Create kids group (users created at runtime from KIDS env var)
+RUN addgroup kids
 
 # Set up Ruby app
 WORKDIR /app

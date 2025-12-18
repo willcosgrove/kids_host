@@ -1,0 +1,66 @@
+# =============================================================
+# KIDS HOSTING CONFIGURATION
+# =============================================================
+# 1. Copy this file to deploy.yml
+# 2. Edit the settings below for your family
+# 3. Copy .kamal/secrets.example to .kamal/secrets and set your Docker token
+# 4. Run: kamal deploy
+# =============================================================
+
+<%
+# --------------------------------------------------------------
+# CONFIGURE YOUR KIDS HERE (name => password for SFTP)
+# --------------------------------------------------------------
+kids = {
+  "alice" => "alice-password",
+  "bob" => "bob-password"
+}
+domain = "example.com"
+%>
+
+service: kids-hosting
+
+# -- Docker Registry ------------------------------------------
+image: YOUR_DOCKERHUB_USERNAME/kids-hosting
+
+registry:
+  username: YOUR_DOCKERHUB_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# -- Build ----------------------------------------------------
+builder:
+  arch: arm64                   # Change to amd64 for Intel/AMD servers
+
+# -- Proxy ----------------------------------------------------
+proxy:
+  ssl: false                    # Set true if not using Cloudflare
+  hosts:
+<% kids.each_key do |kid| %>
+    - <%= kid %>.<%= domain %>
+<% end %>
+
+# -- Your Server ----------------------------------------------
+ssh:
+  user: YOUR_SSH_USER           # SSH user on the server
+
+servers:
+  web:
+    hosts:
+      - YOUR_SERVER_HOSTNAME    # e.g., mini.local, 192.168.1.100
+    options:
+      publish:
+        - 2222:2222             # SFTP port
+
+# -- Storage --------------------------------------------------
+volumes:
+  - /path/to/kids-sites:/sites  # Where kids' files are stored on host
+
+# -- Environment (auto-generated from kids config above) ------
+env:
+  clear:
+    KIDS: "<%= kids.keys.join(',') %>"
+    DOMAIN: "<%= domain %>"
+    KIDS_PASSWORDS: "<%= kids.map { |k,v| "#{k}:#{v}" }.join(',') %>"
+  secret:
+    - KAMAL_REGISTRY_PASSWORD
