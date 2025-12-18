@@ -8,7 +8,6 @@ registry:
 
 builder:
   arch: arm64
-  remote: mini.local
 
 proxy:
   ssl: false
