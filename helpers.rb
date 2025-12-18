@@ -15,11 +15,6 @@ module ErbHelpers
     items.flatten.sample
   end
 
-  # Repeat something n times
-  def repeat(n, &block)
-    n.times.map(&block).join
-  end
-
   # Simple HTML escaping
   def h(text)
     ERB::Util.html_escape(text)
@@ -64,5 +59,19 @@ module ErbHelpers
   # Current year (for copyright)
   def year
     Time.now.year
+  end
+
+  def pluralize(count, singular, plural = pluralize_word(singular))
+    "#{count} #{count == 1 ? singular : plural}"
+  end
+
+  private def pluralize_word(word)
+    case word
+    when /[sxz]$/, /[cs]h$/  then "#{word}es"
+    when /([^aeiou])y$/      then word.sub(/y$/, 'ies')
+    when /f$/                then word.sub(/f$/, 'ves')
+    when /fe$/               then word.sub(/fe$/, 'ves')
+    else                          "#{word}s"
+    end
   end
 end
